@@ -3,7 +3,7 @@
 > Find, book and review billboard space in Hyderabad without brokers, guesswork or fake listings.
 
 <!-- TODO: add a 2–3 minute demo video link and a screenshot/GIF here -->
-**Demo video:** `TODO` · **Live app:** `TODO` · **Team:** `TODO`
+**Demo video:** `[TODO](https://drive.google.com/file/d/1mJaJNqli15_XCc0yCRnrT9axpUwPI2O0/view?usp=drive_link)` · **Live app:** `[TODO](https://panorama-sand.vercel.app/)` · **Team:** `ECHO SOLDIER`
 
 ---
 
