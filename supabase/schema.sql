@@ -394,3 +394,61 @@ REVOKE ALL ON public.owner_review_stats FROM PUBLIC;
 
 GRANT SELECT ON public.owner_review_stats TO anon, authenticated;
 
+
+-- =========================================================
+-- REVIEW MODERATION UPGRADE
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS public.admins (
+    user_id uuid PRIMARY KEY
+        REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE public.reviews
+ADD COLUMN IF NOT EXISTS is_hidden boolean NOT NULL DEFAULT false;
+
+ALTER TABLE public.reviews
+ADD COLUMN IF NOT EXISTS hidden_reason text;
+
+ALTER TABLE public.reviews
+ADD COLUMN IF NOT EXISTS hidden_by uuid
+    REFERENCES auth.users(id) ON DELETE SET NULL;
+
+ALTER TABLE public.reviews
+ADD COLUMN IF NOT EXISTS hidden_at timestamptz;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'reviews_hidden_reason_length'
+    ) THEN
+        ALTER TABLE public.reviews
+        ADD CONSTRAINT reviews_hidden_reason_length
+        CHECK (
+            hidden_reason IS NULL
+            OR char_length(hidden_reason) <= 500
+        );
+    END IF;
+END
+$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'reviews_hidden_reason_required'
+    ) THEN
+        ALTER TABLE public.reviews
+        ADD CONSTRAINT reviews_hidden_reason_required
+        CHECK (
+            NOT is_hidden
+            OR btrim(coalesce(hidden_reason, '')) <> ''
+        );
+    END IF;
+END
+$;
+

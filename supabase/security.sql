@@ -422,3 +422,77 @@ BEFORE UPDATE ON public.reviews
 FOR EACH ROW
 EXECUTE FUNCTION public.enforce_review_update();
 
+
+-- =========================================================
+-- REVIEW MODERATION SECURITY
+-- =========================================================
+
+REVOKE ALL ON public.admins FROM anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT EXISTS (
+        SELECT 1
+        FROM public.admins
+        WHERE user_id = auth.uid()
+    );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
+DROP POLICY IF EXISTS "reviews_select_involved"
+ON public.reviews;
+
+CREATE POLICY "reviews_select_involved"
+ON public.reviews
+FOR SELECT TO authenticated
+USING (
+    reviewer_id = auth.uid()
+    OR owner_id = auth.uid()
+    OR public.is_admin()
+);
+
+DROP POLICY IF EXISTS "reviews_update_admin"
+ON public.reviews;
+
+CREATE POLICY "reviews_update_admin"
+ON public.reviews
+FOR UPDATE TO authenticated
+USING (public.is_admin())
+WITH CHECK (public.is_admin());
+
+CREATE OR REPLACE FUNCTION public.block_cancel_after_end()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF auth.uid() IS NOT NULL
+       AND OLD.status = 'accepted'
+       AND NEW.status = 'cancelled'
+       AND OLD.end_date < current_date
+    THEN
+        RAISE EXCEPTION
+            'This booking has already ended and can no longer be cancelled.'
+            USING ERRCODE = '42501';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_booking_no_cancel_after_end
+ON public.booking_requests;
+
+CREATE TRIGGER trg_booking_no_cancel_after_end
+BEFORE UPDATE ON public.booking_requests
+FOR EACH ROW
+EXECUTE FUNCTION public.block_cancel_after_end();
+
