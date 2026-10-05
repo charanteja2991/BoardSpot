@@ -256,3 +256,169 @@ ON public.booking_requests(owner_id);
 -- ============================================
 -- DONE
 -- ============================================
+-- ============================================
+-- REVIEW SECURITY
+-- ============================================
+
+DROP POLICY IF EXISTS "reviews_select_involved" ON public.reviews;
+
+CREATE POLICY "reviews_select_involved"
+ON public.reviews
+FOR SELECT
+TO authenticated
+USING (
+    reviewer_id = auth.uid()
+    OR owner_id = auth.uid()
+);
+
+DROP POLICY IF EXISTS "reviews_insert_own" ON public.reviews;
+
+CREATE POLICY "reviews_insert_own"
+ON public.reviews
+FOR INSERT
+TO authenticated
+WITH CHECK (
+    reviewer_id = auth.uid()
+);
+
+DROP POLICY IF EXISTS "reviews_update_owner" ON public.reviews;
+
+CREATE POLICY "reviews_update_owner"
+ON public.reviews
+FOR UPDATE
+TO authenticated
+USING (
+    owner_id = auth.uid()
+)
+WITH CHECK (
+    owner_id = auth.uid()
+);
+
+REVOKE ALL ON public.reviews FROM anon;
+
+
+-- ============================================
+-- REVIEW INSERT TRIGGER
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.enforce_review_insert()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    uid uuid := auth.uid();
+    b public.booking_requests%ROWTYPE;
+    bb_owner uuid;
+BEGIN
+    SELECT * INTO b
+    FROM public.booking_requests
+    WHERE id = NEW.booking_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Booking not found.';
+    END IF;
+
+    IF uid IS NOT NULL THEN
+        IF b.advertiser_id <> uid THEN
+            RAISE EXCEPTION 'You can only review your own bookings.';
+        END IF;
+
+        IF b.status <> 'accepted' THEN
+            RAISE EXCEPTION 'Only accepted bookings can be reviewed.';
+        END IF;
+
+        IF b.end_date >= current_date THEN
+            RAISE EXCEPTION 'You can review this billboard once the booking period has ended.';
+        END IF;
+    END IF;
+
+    SELECT owner_id
+    INTO bb_owner
+    FROM public.billboards
+    WHERE id = b.billboard_id;
+
+    IF bb_owner IS NULL THEN
+        RAISE EXCEPTION 'This billboard does not have an owner.';
+    END IF;
+
+    NEW.billboard_id := b.billboard_id;
+    NEW.owner_id := bb_owner;
+    NEW.reviewer_id := b.advertiser_id;
+    NEW.comment := NULLIF(BTRIM(COALESCE(NEW.comment, '')), '');
+
+    IF uid IS NOT NULL THEN
+        NEW.owner_reply := NULL;
+        NEW.owner_replied_at := NULL;
+        NEW.created_at := now();
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_review_insert ON public.reviews;
+
+CREATE TRIGGER trg_review_insert
+BEFORE INSERT ON public.reviews
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_review_insert();
+
+
+-- ============================================
+-- REVIEW UPDATE / OWNER REPLY TRIGGER
+-- ============================================
+
+CREATE OR REPLACE FUNCTION public.enforce_review_update()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    uid uuid := auth.uid();
+BEGIN
+    IF NEW.id IS DISTINCT FROM OLD.id
+    OR NEW.booking_id IS DISTINCT FROM OLD.booking_id
+    OR NEW.billboard_id IS DISTINCT FROM OLD.billboard_id
+    OR NEW.owner_id IS DISTINCT FROM OLD.owner_id
+    OR NEW.reviewer_id IS DISTINCT FROM OLD.reviewer_id
+    OR NEW.rating IS DISTINCT FROM OLD.rating
+    OR NEW.location_matched IS DISTINCT FROM OLD.location_matched
+    OR NEW.photos_accurate IS DISTINCT FROM OLD.photos_accurate
+    OR NEW.owner_responsive IS DISTINCT FROM OLD.owner_responsive
+    OR NEW.comment IS DISTINCT FROM OLD.comment
+    OR NEW.created_at IS DISTINCT FROM OLD.created_at
+    THEN
+        RAISE EXCEPTION 'A submitted review cannot be edited.';
+    END IF;
+
+    IF uid = OLD.owner_id THEN
+        IF OLD.owner_reply IS NOT NULL THEN
+            RAISE EXCEPTION 'You have already replied to this review.';
+        END IF;
+
+        NEW.owner_reply :=
+            NULLIF(BTRIM(COALESCE(NEW.owner_reply, '')), '');
+
+        IF NEW.owner_reply IS NULL THEN
+            RAISE EXCEPTION 'Please write a reply.';
+        END IF;
+
+        NEW.owner_replied_at := now();
+
+        RETURN NEW;
+    END IF;
+
+    RAISE EXCEPTION 'Not allowed.';
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_review_update ON public.reviews;
+
+CREATE TRIGGER trg_review_update
+BEFORE UPDATE ON public.reviews
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_review_update();
+

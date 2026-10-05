@@ -268,3 +268,129 @@ ON public.billboards(status);
 --    └── booking_requests.owner_id
 --
 -- =========================================================
+-- ============================================
+-- REVIEWS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS public.reviews (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    booking_id uuid NOT NULL UNIQUE
+        REFERENCES public.booking_requests(id) ON DELETE CASCADE,
+    billboard_id uuid NOT NULL
+        REFERENCES public.billboards(id) ON DELETE CASCADE,
+    owner_id uuid NOT NULL
+        REFERENCES auth.users(id) ON DELETE CASCADE,
+    reviewer_id uuid NOT NULL
+        REFERENCES auth.users(id) ON DELETE CASCADE,
+    rating smallint NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    location_matched boolean,
+    photos_accurate boolean,
+    owner_responsive boolean,
+    comment text CHECK (comment IS NULL OR char_length(comment) <= 500),
+    owner_reply text CHECK (owner_reply IS NULL OR char_length(owner_reply) <= 500),
+    owner_replied_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (reviewer_id, billboard_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_billboard_created
+ON public.reviews (billboard_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_owner_created
+ON public.reviews (owner_id, created_at DESC);
+
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+
+
+-- ============================================
+-- PUBLIC REVIEWS VIEW
+-- ============================================
+
+CREATE OR REPLACE VIEW public.public_reviews AS
+SELECT
+    r.id,
+    r.billboard_id,
+    bb.title AS billboard_title,
+    r.owner_id,
+    r.rating,
+    r.location_matched,
+    r.photos_accurate,
+    r.owner_responsive,
+    r.comment,
+    r.owner_reply,
+    r.owner_replied_at,
+    r.created_at,
+    b.end_date AS campaign_ended,
+    CASE
+        WHEN BTRIM(COALESCE(p.full_name, '')) = ''
+            THEN 'Advertiser'
+        ELSE
+            SPLIT_PART(BTRIM(p.full_name), ' ', 1)
+            ||
+            CASE
+                WHEN POSITION(' ' IN BTRIM(p.full_name)) > 0
+                THEN ' ' ||
+                    UPPER(
+                        LEFT(
+                            REGEXP_REPLACE(BTRIM(p.full_name), '^.*\s', ''),
+                            1
+                        )
+                    ) || '.'
+                ELSE ''
+            END
+    END AS reviewer_name
+FROM public.reviews r
+JOIN public.booking_requests b ON b.id = r.booking_id
+JOIN public.billboards bb ON bb.id = r.billboard_id
+LEFT JOIN public.profiles p ON p.id = r.reviewer_id;
+
+REVOKE ALL ON public.public_reviews FROM PUBLIC;
+
+GRANT SELECT ON public.public_reviews TO anon, authenticated;
+
+
+-- ============================================
+-- BILLBOARD REVIEW STATISTICS
+-- ============================================
+
+CREATE OR REPLACE VIEW public.billboard_review_stats AS
+SELECT
+    billboard_id,
+    COUNT(*)::int AS review_count,
+    ROUND(AVG(rating)::numeric, 1) AS avg_rating,
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE location_matched)
+        / NULLIF(COUNT(location_matched), 0)
+    ) AS location_matched_pct,
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE photos_accurate)
+        / NULLIF(COUNT(photos_accurate), 0)
+    ) AS photos_accurate_pct,
+    ROUND(
+        100.0 * COUNT(*) FILTER (WHERE owner_responsive)
+        / NULLIF(COUNT(owner_responsive), 0)
+    ) AS owner_responsive_pct
+FROM public.reviews
+GROUP BY billboard_id;
+
+REVOKE ALL ON public.billboard_review_stats FROM PUBLIC;
+
+GRANT SELECT ON public.billboard_review_stats TO anon, authenticated;
+
+
+-- ============================================
+-- OWNER REVIEW STATISTICS
+-- ============================================
+
+CREATE OR REPLACE VIEW public.owner_review_stats AS
+SELECT
+    owner_id,
+    COUNT(*)::int AS review_count,
+    ROUND(AVG(rating)::numeric, 1) AS avg_rating
+FROM public.reviews
+GROUP BY owner_id;
+
+REVOKE ALL ON public.owner_review_stats FROM PUBLIC;
+
+GRANT SELECT ON public.owner_review_stats TO anon, authenticated;
+
