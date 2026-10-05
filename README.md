@@ -222,8 +222,8 @@ supabase/
 
 ## 12. Team and acknowledgements
 
-Charan Teja Kodi - Frontend/UI 
-Om Prakash Dubey - Reseach and development
-Prithvi Raj Bandi - Backend/Database
+Charan Teja Kodi - Frontend/UI ;
+Om Prakash Dubey - Reseach and development ;
+Prithvi Raj Bandi - Backend/Database ;
 
 Built with React, Supabase, TomTom Maps SDK, shadcn/ui and TanStack. Maps note: TomTom has no Street View, so the "Street View" link opens Google Street View at the same coordinates in a new tab (no key needed).
