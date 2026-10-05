@@ -1,0 +1,164 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Panorama design system — "Crisp Teal Commerce".
+ * Palette and typography carried from the approved design direction.
+ * Never hardcode colors in components; use these semantic tokens.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-heading);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-ink: var(--foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --shadow-card: 0 24px 50px -28px rgb(22 35 31 / 0.4);
+  --shadow-panel: 0 20px 50px -24px rgb(14 133 120 / 0.35);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Space Grotesk", "Inter", sans-serif;
+
+  --background: #f7f8f7;
+  --foreground: #16231f;
+  --surface: #f3f5f4;
+
+  --card: #ffffff;
+  --card-foreground: #16231f;
+  --popover: #ffffff;
+  --popover-foreground: #16231f;
+
+  --brand: #0e8578;
+  --brand-dark: #0a5a51;
+  --primary: #0e8578;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f3f5f4;
+  --secondary-foreground: #16231f;
+
+  --muted: #f3f5f4;
+  --muted-foreground: #6b7a75;
+
+  --accent: #f5a524;
+  --accent-foreground: #16231f;
+
+  --success: #0e8578;
+  --destructive: #c0392b;
+  --destructive-foreground: #ffffff;
+
+  --border: #e3e7e5;
+  --input: #e3e7e5;
+  --ring: #0e8578;
+
+  --chart-1: #0e8578;
+  --chart-2: #f5a524;
+  --chart-3: #16231f;
+  --chart-4: #6b7a75;
+  --chart-5: #0a5a51;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #16231f;
+  --sidebar-primary: #0e8578;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f5f4;
+  --sidebar-accent-foreground: #16231f;
+  --sidebar-border: #e3e7e5;
+  --sidebar-ring: #0e8578;
+}
+
+.dark {
+  --background: #0e1614;
+  --foreground: #f2f5f4;
+  --surface: #16231f;
+  --card: #16231f;
+  --card-foreground: #f2f5f4;
+  --popover: #16231f;
+  --popover-foreground: #f2f5f4;
+  --secondary: #1d2c27;
+  --secondary-foreground: #f2f5f4;
+  --muted: #1d2c27;
+  --muted-foreground: #9bada7;
+  --border: #24342e;
+  --input: #24342e;
+  --sidebar: #16231f;
+  --sidebar-foreground: #f2f5f4;
+  --sidebar-accent: #1d2c27;
+  --sidebar-accent-foreground: #f2f5f4;
+  --sidebar-border: #24342e;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-heading);
+}
