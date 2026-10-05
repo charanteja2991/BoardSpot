@@ -19,10 +19,6 @@ Outdoor advertising in India is still largely booked through brokers, phone call
 
 We surveyed **12 people, 10 of them in Hyderabad** (one in Pune, one unspecified): **3** who own or manage boards, **3** who have paid for outdoor advertising, **5** who want to advertise but haven't yet, and 1 "none of these". Raw responses are not published because they include contact details.
 
-> **Honest caveat:** n = 12 is a small, self-selected sample. We treat it as directional evidence that shaped the product, not statistical proof. **7 respondents offered a 20-minute follow-up chat**, and we plan to interview them.
->
-> Several questions (for example "how many boards do you manage") were answered by people who don't own boards, so we report counts across all respondents rather than splitting by role.
-
 ### What we found
 
 | Finding | Evidence (of 12) |
@@ -58,10 +54,6 @@ We surveyed **12 people, 10 of them in Hyderabad** (one in Pune, one unspecified
 | Fear of losing price control (5) | **Owners set their own price and accept or reject every request**; the platform never sets or negotiates prices |
 | "Too complicated" (7) | A 5-step listing wizard and a short request form, with no paperwork inside the app |
 | Slow replies (4) | One request inbox with accept / reject instead of calls and WhatsApp chains, plus a "did the owner respond promptly?" check in reviews |
-
-### What the research says we have *not* solved yet
-
-These feed the future development plan in section 10: **owner and advertiser verification** (fake locations and ownership were the top written complaint), **secure payment**, **proof of display**, **traffic and audience data** (5 of 12 choose boards on it), and a **low, transparent commission** (6 of 12 fear fees).
 
 ## 3. Who it's for
 
@@ -138,12 +130,6 @@ TomTom Maps SDK → maps and location picker
 - **Reviewer privacy.** The public sees first name plus last initial only, through a view that never exposes the reviewer's id, phone or email.
 - **Moderation accountability.** Hiding needs a written reason, who hid it and when are recorded, and nothing is ever deleted.
 - **Roles can't be self-escalated** (fixed in `security_fixes.sql`).
-
-**Known limits (we'd rather be upfront):**
-- **There is no identity or business verification yet**, so listings are not checked against ownership documents. This is our top future item (section 10).
-- There is no payment, contract or proof-of-display step.
-- There is no formal privacy policy or appeals flow for hidden reviews yet.
-- Our survey sample is small (n = 12); see section 2.
 
 ## 8. Run it locally
 
@@ -236,6 +222,8 @@ supabase/
 
 ## 12. Team and acknowledgements
 
-`TODO: names and roles`
+Charan Teja Kodi - Frontend/UI 
+Om Prakash Dubey - Reseach and development
+Prithvi Raj Bandi - Backend/Database
 
 Built with React, Supabase, TomTom Maps SDK, shadcn/ui and TanStack. Maps note: TomTom has no Street View, so the "Street View" link opens Google Street View at the same coordinates in a new tab (no key needed).
