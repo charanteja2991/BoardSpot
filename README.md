@@ -172,7 +172,6 @@ Then:
 6. As the owner → `/dashboard` → reply to the review.
 7. As a moderator → `/admin/reviews` → hide it with a reason. It disappears from the listing.
 
-> **TODO:** add seeded demo credentials here so judges can skip setup.
 
 ## 9. Notes on the data model
 
